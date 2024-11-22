@@ -3,6 +3,7 @@ package com.example.lab4;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -136,7 +137,14 @@ public class MainActivity extends AppCompatActivity {
             try {
                 JSONObject j = new JSONObject(result);
                 String art = j.getString("artist"), title = j.getString("title");
-                db.execSQL("INSERT INTO Songs (artist, track_title) SELECT ?, ? FROM Songs WHERE artist != ? AND track_title != ? AND created_at = (SELECT MAX(created_at) FROM Songs) LIMIT 1", new Object[]{art, title, art, title});
+
+                long RowsCount = DatabaseUtils.queryNumEntries(db,"Songs");
+
+                if (RowsCount == 0) {
+                    db.execSQL("INSERT INTO Songs (artist, track_title) VALUES (?, ?)", new Object[]{art, title});
+                } else{
+                    db.execSQL("INSERT INTO Songs (artist, track_title) SELECT ?, ? FROM Songs WHERE (artist != ? AND track_title != ? AND created_at = (SELECT MAX(created_at) FROM Songs)) LIMIT 1", new Object[]{art, title, art, title});
+                }
             } catch (Exception e) {
                 Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
             }
